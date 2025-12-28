@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, Href } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useUserStore } from '@/lib/store';
 import { useTaskStore, Task } from '@/lib/taskStore';
 import { ARCHETYPES } from '@/constants/archetypes';
@@ -15,10 +16,10 @@ const CHARACTER_IMAGES = {
 };
 
 const ACCENT_COLORS = {
-    yujiro: '#8B0000',
-    baki: '#4A6B8A',
-    ohma: '#2D5A5A',
-    jack: '#8B7355',
+    yujiro: '#E53E3E',
+    baki: '#63B3ED',
+    ohma: '#38B2AC',
+    jack: '#F6AD55',
 };
 
 export default function DungeonScreen() {
@@ -40,6 +41,7 @@ export default function DungeonScreen() {
     const characterImage = archetype ? CHARACTER_IMAGES[archetype.id as keyof typeof CHARACTER_IMAGES] : null;
     const accentColor = archetype ? ACCENT_COLORS[archetype.id as keyof typeof ACCENT_COLORS] : '#4A6B8A';
 
+    // Timer Logic
     const [timeRemaining, setTimeRemaining] = useState(task?.duration ? task.duration * 60 : 60);
     const [isActive, setIsActive] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -86,7 +88,7 @@ export default function DungeonScreen() {
             failTask(task.id);
         }
         if (archetype) {
-            speakQuote(archetype.id, 'Compliance failure detected.');
+            speakQuote(archetype.id, 'Failure.');
         }
         router.back();
     };
@@ -100,10 +102,11 @@ export default function DungeonScreen() {
     if (!task || !archetype) {
         return (
             <View style={styles.container}>
+                <LinearGradient colors={['#000', '#111']} style={styles.background} />
                 <SafeAreaView style={styles.errorContainer}>
-                    <Text style={styles.systemText}>TASK NOT FOUND</Text>
+                    <Text style={styles.systemText}>INVALID PARAMETERS</Text>
                     <TouchableOpacity style={styles.returnButton} onPress={() => router.back()}>
-                        <Text style={styles.returnText}>← RETURN</Text>
+                        <Text style={styles.returnText}>RETURN</Text>
                     </TouchableOpacity>
                 </SafeAreaView>
             </View>
@@ -112,80 +115,102 @@ export default function DungeonScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Minimal character presence */}
+            {/* Background */}
+            <LinearGradient colors={['#050505', '#1a1a1a']} style={styles.background} />
+
+            {/* Character Overlay */}
             {characterImage && (
-                <Image
-                    source={characterImage}
-                    style={styles.characterBg}
-                    resizeMode="contain"
-                />
+                <View style={styles.characterContainer}>
+                    <Image
+                        source={characterImage}
+                        style={styles.characterBg}
+                        resizeMode="cover"
+                    />
+                    <LinearGradient
+                        colors={['rgba(0,0,0,0.4)', '#000']}
+                        style={styles.characterGradient}
+                    />
+                </View>
             )}
 
             <SafeAreaView style={styles.content}>
-                {/* Exit button */}
+                {/* Header */}
                 <TouchableOpacity style={styles.exitButton} onPress={() => router.back()}>
-                    <Text style={styles.exitText}>← EXIT</Text>
+                    <Text style={styles.exitText}>ABORT MISSION</Text>
                 </TouchableOpacity>
 
-                {/* Minimal focus mode */}
+                {/* Main Focus Area */}
                 <View style={styles.focusArea}>
-                    {/* Timer */}
-                    <Text style={styles.timer}>{formatTime(timeRemaining)}</Text>
+                    <View style={styles.timerContainer}>
+                        <LinearGradient
+                            colors={[isActive ? `${accentColor}20` : 'transparent', 'transparent']}
+                            style={styles.timerGlow}
+                        />
+                        <Text style={[styles.timer, { textShadowColor: isActive ? accentColor : 'transparent' }]}>
+                            {formatTime(timeRemaining)}
+                        </Text>
+                    </View>
 
-                    {/* Status */}
                     <Text style={[styles.status, { color: accentColor }]}>
-                        {isCompleted ? 'COMPLETE' : isActive ? 'IN PROGRESS' : 'READY'}
+                        {isCompleted ? 'MISSION COMPLETE' : isActive ? 'SYSTEM ENGAGED' : 'AWAITING INPUT'}
                     </Text>
 
-                    {/* Task title (minimal) */}
                     <Text style={styles.taskTitle}>{task.title}</Text>
-                </View>
 
-                {/* System message */}
-                <View style={styles.messageArea}>
-                    <Text style={styles.systemMessage}>
-                        {isCompleted
-                            ? 'Progress recorded.'
-                            : isActive
-                                ? 'Focus.'
-                                : 'Begin when ready.'}
-                    </Text>
+                    <View style={styles.xpBadge}>
+                        <Text style={[styles.xpText, { color: accentColor }]}>+{task.xp} XP</Text>
+                    </View>
                 </View>
 
                 {/* Actions */}
                 <View style={styles.actions}>
                     {isCompleted ? (
                         <TouchableOpacity
-                            style={[styles.primaryButton, { borderColor: accentColor }]}
+                            style={[styles.actionButton, { shadowColor: accentColor }]}
                             onPress={() => router.back()}
                         >
-                            <Text style={[styles.primaryButtonText, { color: accentColor }]}>
-                                RETURN
-                            </Text>
+                            <LinearGradient
+                                colors={[accentColor, `${accentColor}80`]}
+                                style={styles.actionGradient}
+                            >
+                                <Text style={styles.actionText}>CONFIRM</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     ) : isActive ? (
                         <TouchableOpacity
-                            style={[styles.primaryButton, { borderColor: accentColor }]}
+                            style={[styles.actionButton, { shadowColor: accentColor }]}
                             onPress={handleComplete}
                         >
-                            <Text style={[styles.primaryButtonText, { color: accentColor }]}>
-                                MARK COMPLETE
-                            </Text>
+                            <LinearGradient
+                                colors={[accentColor, `${accentColor}80`]}
+                                style={styles.actionGradient}
+                            >
+                                <Text style={styles.actionText}>COMPLETE</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity
-                            style={[styles.primaryButton, { borderColor: accentColor }]}
+                            style={[styles.actionButton, { shadowColor: accentColor }]}
                             onPress={handleStart}
                         >
-                            <Text style={[styles.primaryButtonText, { color: accentColor }]}>
-                                BEGIN
-                            </Text>
+                            <LinearGradient
+                                colors={[accentColor, `${accentColor}80`]}
+                                style={styles.actionGradient}
+                            >
+                                <Text style={styles.actionText}>ENGAGE</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     )}
 
-                    {!isCompleted && (
-                        <TouchableOpacity style={styles.abandonButton} onPress={handleAbandon}>
-                            <Text style={styles.abandonText}>ABANDON</Text>
+                    {!isCompleted && !isActive && (
+                        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
+                            <Text style={styles.secondaryText}>CANCEL</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {isActive && (
+                        <TouchableOpacity style={styles.secondaryButton} onPress={handleAbandon}>
+                            <Text style={[styles.secondaryText, { color: '#E53E3E' }]}>GIVE UP</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -197,15 +222,32 @@ export default function DungeonScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#050505'
+        backgroundColor: '#000',
+    },
+    background: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+    },
+    characterContainer: {
+        position: 'absolute',
+        top: 0,
+        width: '100%',
+        height: '70%',
+        opacity: 0.3,
     },
     characterBg: {
+        width: '100%',
+        height: '100%',
+    },
+    characterGradient: {
         position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
         bottom: 0,
-        right: -50,
-        width: 250,
-        height: 350,
-        opacity: 0.08,
     },
     errorContainer: {
         flex: 1,
@@ -213,33 +255,35 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     systemText: {
+        color: '#fff',
+        fontSize: 16,
         fontFamily: 'monospace',
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: 12,
-        letterSpacing: 3,
+        letterSpacing: 4,
     },
     returnButton: {
         marginTop: 20,
         padding: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.2)',
     },
     returnText: {
-        fontFamily: 'monospace',
-        color: 'rgba(255,255,255,0.5)',
+        color: '#fff',
         fontSize: 12,
+        fontFamily: 'monospace',
     },
     content: {
         flex: 1,
-        padding: 20,
+        padding: 24,
         justifyContent: 'space-between',
     },
     exitButton: {
         alignSelf: 'flex-start',
-        padding: 10,
+        padding: 12,
     },
     exitText: {
-        fontFamily: 'monospace',
         color: 'rgba(255,255,255,0.4)',
         fontSize: 11,
+        fontFamily: 'monospace',
         letterSpacing: 2,
     },
     focusArea: {
@@ -247,56 +291,80 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    timerContainer: {
+        position: 'relative',
+        marginBottom: 20,
+    },
+    timerGlow: {
+        position: 'absolute',
+        left: -50,
+        right: -50,
+        top: -50,
+        bottom: -50,
+        borderRadius: 100,
+        opacity: 0.5,
+    },
     timer: {
-        color: 'rgba(255,255,255,0.9)',
-        fontSize: 72,
-        fontWeight: '100',
+        color: '#fff',
+        fontSize: 80,
+        fontWeight: '900',
         letterSpacing: 4,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 20,
     },
     status: {
-        fontFamily: 'monospace',
-        fontSize: 11,
+        fontSize: 14,
+        fontWeight: 'bold',
         letterSpacing: 4,
-        marginTop: 16,
+        marginBottom: 40,
     },
     taskTitle: {
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: 14,
-        marginTop: 30,
+        color: '#fff',
+        fontSize: 24,
+        fontWeight: '300',
         textAlign: 'center',
+        letterSpacing: 1,
+        marginBottom: 20,
     },
-    messageArea: {
-        alignItems: 'center',
-        paddingVertical: 30,
+    xpBadge: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
     },
-    systemMessage: {
-        fontFamily: 'monospace',
-        color: 'rgba(255,255,255,0.3)',
-        fontSize: 12,
-        letterSpacing: 2,
+    xpText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        letterSpacing: 1,
     },
     actions: {
-        paddingBottom: 20,
+        gap: 16,
     },
-    primaryButton: {
-        borderWidth: 1,
-        padding: 18,
-        alignItems: 'center',
-        marginBottom: 12,
+    actionButton: {
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+        elevation: 10,
     },
-    primaryButtonText: {
-        fontFamily: 'monospace',
-        fontSize: 13,
-        letterSpacing: 3,
-    },
-    abandonButton: {
-        padding: 14,
+    actionGradient: {
+        paddingVertical: 20,
+        borderRadius: 4,
         alignItems: 'center',
     },
-    abandonText: {
+    actionText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '900',
+        letterSpacing: 4,
+    },
+    secondaryButton: {
+        alignItems: 'center',
+        padding: 16,
+    },
+    secondaryText: {
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: 12,
         fontFamily: 'monospace',
-        color: 'rgba(139,0,0,0.6)',
-        fontSize: 11,
         letterSpacing: 2,
     },
 });

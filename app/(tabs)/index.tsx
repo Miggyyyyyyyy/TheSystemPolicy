@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Href } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useUserStore } from '@/lib/store';
 import { useTaskStore } from '@/lib/taskStore';
 import { ARCHETYPES } from '@/constants/archetypes';
 import { speakQuote } from '@/lib/voice';
+
+const { width } = Dimensions.get('window');
 
 const CHARACTER_IMAGES = {
   yujiro: require('@/assets/images/yujiro.png'),
@@ -15,10 +18,10 @@ const CHARACTER_IMAGES = {
 };
 
 const ACCENT_COLORS = {
-  yujiro: '#8B0000',
-  baki: '#4A6B8A',
-  ohma: '#2D5A5A',
-  jack: '#8B7355',
+  yujiro: '#E53E3E', // Brighter red for glow
+  baki: '#63B3ED',   // Brighter blue
+  ohma: '#38B2AC',   // Brighter teal
+  jack: '#F6AD55',   // Brighter amber
 };
 
 export default function TodayScreen() {
@@ -30,21 +33,28 @@ export default function TodayScreen() {
   const archetype = ARCHETYPES.find((a) => a.id === profile?.archetype);
   const characterImage = archetype ? CHARACTER_IMAGES[archetype.id as keyof typeof CHARACTER_IMAGES] : null;
   const accentColor = archetype ? ACCENT_COLORS[archetype.id as keyof typeof ACCENT_COLORS] : '#4A6B8A';
+  const glowColor = `${accentColor}40`; // 25% opacity
 
-  // Find current task (first incomplete)
   const currentTask = tasks.find(t => !t.completed && !t.failed);
   const completedCount = tasks.filter(t => t.completed).length;
 
   if (!profile || !archetype) {
     return (
       <View style={styles.container}>
+        <LinearGradient colors={['#000', '#1a1a1a']} style={styles.background} />
         <SafeAreaView style={styles.emptyState}>
+          <Text style={styles.systemBadge}>SYSTEM OFFLINE</Text>
           <Text style={styles.systemText}>NO PATH SELECTED</Text>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => router.replace('/(onboarding)' as Href)}
           >
-            <Text style={styles.actionButtonText}>SELECT PATH</Text>
+            <LinearGradient
+              colors={['#4A6B8A', '#2C5282']}
+              style={styles.actionButtonGradient}
+            >
+              <Text style={styles.actionButtonText}>INITIATE PROTOCOL</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </SafeAreaView>
       </View>
@@ -59,49 +69,88 @@ export default function TodayScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Character background (faded) */}
+      {/* Dynamic Background */}
+      <LinearGradient
+        colors={['#050505', '#0A0A0A', '#131313']}
+        style={styles.background}
+      />
+
+      {/* Cinematic Character Art */}
       {characterImage && (
-        <Image
-          source={characterImage}
-          style={styles.characterBg}
-          resizeMode="contain"
-        />
+        <View style={styles.characterContainer}>
+          <Image
+            source={characterImage}
+            style={styles.characterBg}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['transparent', '#0A0A0A']}
+            style={styles.characterGradient}
+          />
+          <LinearGradient
+            colors={['transparent', '#0A0A0A']}
+            locations={[0, 0.8]}
+            style={styles.characterGradientBottom}
+          />
+        </View>
       )}
 
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Header: Level + Streak */}
+
+          {/* HUD Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={styles.levelLabel}>LEVEL</Text>
-              <Text style={styles.levelValue}>{profile.level}</Text>
+            <View style={styles.levelContainer}>
+              <Text style={[styles.levelLabel, { color: accentColor }]}>LVL.{profile.level}</Text>
+              <View style={[styles.xpBarBg, { borderColor: `${accentColor}30` }]}>
+                <View style={[styles.xpBarFill, { width: `${(profile.stats.discipline / 20) * 100}%`, backgroundColor: accentColor }]} />
+              </View>
             </View>
-            <View style={styles.streak}>
-              <Text style={styles.streakValue}>{profile.streak}</Text>
+            <View style={styles.streakContainer}>
+              <Text style={[styles.streakValue, { textShadowColor: glowColor }]}>{profile.streak}</Text>
               <Text style={styles.streakLabel}>DAY STREAK</Text>
             </View>
           </View>
 
-          {/* Current Objective */}
-          <View style={styles.objectiveSection}>
-            <Text style={styles.sectionLabel}>CURRENT OBJECTIVE</Text>
+          {/* Current Objective Card */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.labelRow}>
+              <View style={[styles.statusDot, { backgroundColor: currentTask ? accentColor : '#444' }]} />
+              <Text style={styles.sectionLabel}>CURRENT OBJECTIVE</Text>
+            </View>
+
             {currentTask ? (
-              <View style={[styles.objectiveCard, { borderLeftColor: accentColor }]}>
-                <Text style={styles.objectiveTime}>{currentTask.time}</Text>
+              <LinearGradient
+                colors={[`${accentColor}15`, 'rgba(255,255,255,0.02)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.objectiveCard, { borderColor: `${accentColor}40` }]}
+              >
+                <View style={styles.objectiveHeader}>
+                  <Text style={[styles.objectiveTime, { color: accentColor }]}>{currentTask.time}</Text>
+                  <Text style={styles.objectiveDuration}>{currentTask.duration} MIN</Text>
+                </View>
+
                 <Text style={styles.objectiveTitle}>{currentTask.title}</Text>
-                <Text style={styles.objectiveIntent}>{currentTask.intent} • {currentTask.duration}min</Text>
+                <Text style={styles.objectiveIntent}>{currentTask.intent}</Text>
+
                 <TouchableOpacity
-                  style={[styles.startButton, { borderColor: accentColor }]}
+                  style={[styles.startButton, { shadowColor: accentColor }]}
                   onPress={handleStartTask}
                 >
-                  <Text style={[styles.startButtonText, { color: accentColor }]}>
-                    START TASK
-                  </Text>
+                  <LinearGradient
+                    colors={[accentColor, `${accentColor}80`]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.startButtonGradient}
+                  >
+                    <Text style={styles.startButtonText}>EXECUTE</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
+              </LinearGradient>
             ) : (
-              <View style={styles.objectiveCard}>
-                <Text style={styles.completeText}>All tasks complete.</Text>
+              <View style={styles.completeCard}>
+                <Text style={styles.completeText}>ALL SYSTEMS NORMAL. REST.</Text>
               </View>
             )}
           </View>
@@ -109,57 +158,69 @@ export default function TodayScreen() {
           {/* Penalty Warning */}
           {penaltyActive && (
             <TouchableOpacity
-              style={styles.penaltyBanner}
               onPress={() => router.push('/dungeon?taskId=penalty-1' as Href)}
             >
-              <Text style={styles.penaltyText}>⚠ PENALTY ACTIVE — TAP TO RESOLVE</Text>
+              <LinearGradient
+                colors={['rgba(139,0,0,0.4)', 'rgba(139,0,0,0.1)']}
+                style={styles.penaltyBanner}
+              >
+                <Text style={styles.penaltyIcon}>⚠</Text>
+                <Text style={styles.penaltyText}>PENALTY ACTIVE // IMMEDIATE ACTION REQUIRED</Text>
+              </LinearGradient>
             </TouchableOpacity>
           )}
 
           {/* Timeline */}
-          <View style={styles.timelineSection}>
-            <Text style={styles.sectionLabel}>TODAY'S TIMELINE</Text>
-            <Text style={styles.progressText}>{completedCount}/{tasks.length} COMPLETE</Text>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionLabel}>OPERATIONAL TIMELINE</Text>
 
-            {tasks.map((task, i) => (
-              <TouchableOpacity
-                key={task.id}
-                style={[
-                  styles.timelineItem,
-                  task.completed && styles.timelineItemCompleted,
-                  task.failed && styles.timelineItemFailed,
-                  task.id === currentTask?.id && styles.timelineItemActive,
-                ]}
-                onPress={() => !task.completed && router.push(`/dungeon?taskId=${task.id}` as Href)}
-                disabled={task.completed}
-              >
-                <Text style={styles.timelineTime}>{task.time}</Text>
-                <View style={styles.timelineContent}>
-                  <Text style={[
-                    styles.timelineTitle,
-                    task.completed && styles.timelineTitleCompleted
+            <View style={styles.timelineList}>
+              <View style={[styles.timelineLine, { backgroundColor: `${accentColor}20` }]} />
+
+              {tasks.map((task, i) => (
+                <TouchableOpacity
+                  key={task.id}
+                  style={[
+                    styles.timelineItem,
+                    task.completed && styles.timelineItemCompleted
+                  ]}
+                  onPress={() => !task.completed && router.push(`/dungeon?taskId=${task.id}` as Href)}
+                  disabled={task.completed}
+                >
+                  <View style={[
+                    styles.timelineDot,
+                    task.completed ? { backgroundColor: accentColor } :
+                      task.id === currentTask?.id ? { borderColor: accentColor, borderWidth: 2, backgroundColor: '#000' } :
+                        { backgroundColor: '#222' }
+                  ]} />
+
+                  <View style={[
+                    styles.timelineContent,
+                    task.id === currentTask?.id && { backgroundColor: `${accentColor}10`, borderColor: `${accentColor}20`, borderWidth: 1 }
                   ]}>
-                    {task.title}
-                  </Text>
-                  <Text style={styles.timelineMeta}>{task.intent}</Text>
-                </View>
-                <Text style={styles.timelineStatus}>
-                  {task.completed ? '✓' : task.failed ? '✗' : '○'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                    <Text style={[styles.timelineTime, task.id === currentTask?.id && { color: accentColor }]}>{task.time}</Text>
+                    <Text style={[styles.timelineTitle, task.completed && { color: '#666' }]}>{task.title}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          {/* System Quote */}
+          {/* Quote */}
           <TouchableOpacity
-            style={styles.quoteSection}
+            style={styles.quoteCard}
             onPress={() => speakQuote(archetype.id, archetype.quote)}
           >
-            <Text style={styles.quoteText}>"{archetype.quote}"</Text>
-            <Text style={styles.quoteAuthor}>— {archetype.name}</Text>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.03)', 'transparent']}
+              style={styles.quoteGradient}
+            >
+              <Text style={styles.quoteText}>"{archetype.quote}"</Text>
+              <Text style={[styles.quoteAuthor, { color: accentColor }]}>{archetype.name.toUpperCase()}</Text>
+            </LinearGradient>
           </TouchableOpacity>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 120 }} />
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -169,215 +230,301 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A'
+    backgroundColor: '#000',
+  },
+  background: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  characterContainer: {
+    position: 'absolute',
+    top: 0,
+    width: '100%',
+    height: 600,
+    opacity: 0.6,
   },
   characterBg: {
+    width: '100%',
+    height: '100%',
+  },
+  characterGradient: {
     position: 'absolute',
-    top: 50,
-    right: -80,
-    width: 280,
-    height: 400,
-    opacity: 0.12,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  characterGradientBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 300,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+  },
+  systemBadge: {
+    color: '#F56565',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+    marginBottom: 10,
+    backgroundColor: 'rgba(245, 101, 101, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   systemText: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 12,
-    letterSpacing: 3,
-    marginBottom: 20,
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 30,
   },
   actionButton: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    padding: 16,
-    paddingHorizontal: 30,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  actionButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 40,
   },
   actionButtonText: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
     letterSpacing: 2,
   },
   scrollView: {
     flex: 1,
-    padding: 20
+    padding: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 30,
+    alignItems: 'flex-end',
+    marginBottom: 40,
+    marginTop: 10,
+  },
+  levelContainer: {
+    flex: 1,
   },
   levelLabel: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 10,
-    letterSpacing: 3,
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  levelValue: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 32,
-    fontWeight: '200',
+  xpBarBg: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 100,
+    borderRadius: 2,
+    borderWidth: 0.5,
   },
-  streak: {
+  xpBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  streakContainer: {
     alignItems: 'flex-end',
   },
   streakValue: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 24,
-    fontWeight: '200',
+    color: '#fff',
+    fontSize: 48,
+    fontWeight: '900',
+    lineHeight: 48,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   streakLabel: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 9,
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 10,
+    fontWeight: 'bold',
     letterSpacing: 2,
   },
-  objectiveSection: {
-    marginBottom: 24,
+  sectionContainer: {
+    marginBottom: 40,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   sectionLabel: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 10,
-    letterSpacing: 3,
-    marginBottom: 12,
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 2,
   },
   objectiveCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderLeftWidth: 2,
-    borderLeftColor: 'rgba(255,255,255,0.2)',
-    padding: 16,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 24,
+    backdropFilter: 'blur(10px)',
+  },
+  objectiveHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   objectiveTime: {
+    fontSize: 14,
+    fontWeight: 'bold',
     fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 11,
-    marginBottom: 4,
   },
-  objectiveTitle: {
-    color: 'rgba(255,255,255,0.95)',
-    fontSize: 18,
-    fontWeight: '300',
-    marginBottom: 6,
-  },
-  objectiveIntent: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 11,
-    letterSpacing: 1,
-    marginBottom: 16,
-  },
-  startButton: {
-    borderWidth: 1,
-    padding: 12,
-    alignItems: 'center',
-  },
-  startButtonText: {
-    fontFamily: 'monospace',
-    fontSize: 11,
-    letterSpacing: 2,
-  },
-  completeText: {
-    fontFamily: 'monospace',
+  objectiveDuration: {
     color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
+    fontWeight: 'bold',
+  },
+  objectiveTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  objectiveIntent: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    letterSpacing: 1,
+    marginBottom: 24,
+    fontFamily: 'monospace',
+  },
+  startButton: {
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  startButtonGradient: {
+    paddingVertical: 18,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 4,
+  },
+  completeCard: {
+    padding: 30,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  completeText: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: 'bold',
   },
   penaltyBanner: {
-    backgroundColor: 'rgba(139,0,0,0.15)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 30,
     borderWidth: 1,
-    borderColor: 'rgba(139,0,0,0.4)',
-    padding: 14,
-    marginBottom: 24,
+    borderColor: '#E53E3E',
+    borderRadius: 8,
+    gap: 12,
+  },
+  penaltyIcon: {
+    color: '#E53E3E',
+    fontSize: 18,
   },
   penaltyText: {
-    fontFamily: 'monospace',
-    color: '#8B0000',
-    fontSize: 11,
+    color: '#E53E3E',
+    fontSize: 12,
+    fontWeight: 'bold',
     letterSpacing: 1,
-    textAlign: 'center',
   },
-  timelineSection: {
-    marginBottom: 30,
+  timelineList: {
+    position: 'relative',
+    paddingLeft: 12,
   },
-  progressText: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 10,
-    letterSpacing: 2,
-    marginBottom: 12,
+  timelineLine: {
+    position: 'absolute',
+    left: 15,
+    top: 0,
+    bottom: 0,
+    width: 2,
   },
   timelineItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    padding: 12,
-    marginBottom: 4,
-    borderLeftWidth: 2,
-    borderLeftColor: 'transparent',
-  },
-  timelineItemActive: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderLeftColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    paddingVertical: 4,
   },
   timelineItemCompleted: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
-  timelineItemFailed: {
-    backgroundColor: 'rgba(139,0,0,0.1)',
-  },
-  timelineTime: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 11,
-    width: 50,
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 6,
+    marginRight: 20,
+    zIndex: 10,
   },
   timelineContent: {
     flex: 1,
-    marginLeft: 10,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  timelineTime: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    fontFamily: 'monospace',
+    marginBottom: 4,
   },
   timelineTitle: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 13,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  timelineTitleCompleted: {
-    textDecorationLine: 'line-through',
-    color: 'rgba(255,255,255,0.4)',
-  },
-  timelineMeta: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  timelineStatus: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 14,
-    width: 20,
-    textAlign: 'right',
-  },
-  quoteSection: {
+  quoteCard: {
+    marginTop: 20,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    paddingTop: 20,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  quoteGradient: {
+    padding: 24,
   },
   quoteText: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 13,
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '300',
     fontStyle: 'italic',
-    lineHeight: 20,
+    lineHeight: 28,
+    marginBottom: 12,
   },
   quoteAuthor: {
-    fontFamily: 'monospace',
-    color: 'rgba(255,255,255,0.2)',
-    fontSize: 10,
-    marginTop: 8,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 2,
+    textAlign: 'right',
   },
 });
