@@ -1,57 +1,76 @@
 import React from 'react';
+import { Tabs } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { useUserStore } from '@/lib/store';
+import { ARCHETYPES } from '@/constants/archetypes';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+const ACCENT_COLORS: Record<string, string> = {
+  yujiro: '#8B0000',
+  baki: '#4A6B8A',
+  ohma: '#2D5A5A',
+  jack: '#8B7355',
+};
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const profile = useUserStore((state) => state.profile);
+  const archetype = ARCHETYPES.find((a) => a.id === profile?.archetype);
+  const accentColor = archetype ? ACCENT_COLORS[archetype.id] : '#4A6B8A';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
+        headerShown: false,
+        tabBarActiveTintColor: accentColor,
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
+        tabBarStyle: {
+          backgroundColor: '#050505',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(255,255,255,0.05)',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontFamily: 'monospace',
+          fontSize: 9,
+          letterSpacing: 1,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
+          title: 'TODAY',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="crosshairs" size={18} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'PATH',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="user" size={18} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'PROGRESS',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="line-chart" size={18} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'SETTINGS',
+          tabBarIcon: ({ color }) => (
+            <FontAwesome name="cog" size={18} color={color} />
+          ),
         }}
       />
     </Tabs>
