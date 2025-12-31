@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The System — Verified</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(900px 300px at 50% -40%, #ff2a2a55, transparent 70%),
+                  linear-gradient(135deg, #050507, #0b0b12);
+      color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      max-width: 420px;
+      width: 100%;
+      padding: 28px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #0c0c14, #07070c);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
+    }
+    p {
+      opacity: 0.8;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+    .btn {
+      display: block;
+      text-decoration: none;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      padding: 16px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ff2a2a, #b80000);
+      color: #08080c;
+      box-shadow: 0 14px 36px rgba(255,42,42,0.35);
+      margin-bottom: 14px;
+    }
+    .link {
+      font-size: 13px;
+      opacity: 0.65;
+      text-decoration: none;
+      color: #fff;
+    }
+    .slash {
+      height: 10px;
+      border-radius: 999px;
+      margin: 18px 0;
+      background: linear-gradient(90deg, transparent, #ff2a2a, transparent);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Verified.</h1>
+    <p>
+      Your identity has been confirmed.<br>
+      The System is unlocked.
+    </p>
+
+    <div class="slash"></div>
+
+    <a class="btn" href="thesystem://auth/callback">
+      OPEN THE SYSTEM
+    </a>
+
+    <p style="font-size:13px;opacity:0.65">
+      App not opening?
+    </p>
+
+    <a class="link" href="https://apps.apple.com/" target="_blank">
+      Download on App Store
+    </a><br>
+    <a class="link" href="https://play.google.com/store" target="_blank">
+      Get it on Google Play
+    </a>
+  </div>
+
+  <script>
+    // Auto-attempt deep link
+    setTimeout(() => {
+      window.location.href = "thesystem://auth/callback";
+    }, 600);
+  </script>
+</body>
+</html>
